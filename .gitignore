@@ -3,3 +3,5 @@ node_modules/
 *.xlsx
 data/completions.json
 data/feedback.json
+
+.vercel

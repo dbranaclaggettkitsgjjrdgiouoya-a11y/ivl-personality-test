@@ -218,16 +218,22 @@ app.use((req, res) => {
   }
 });
 
-// ==================== 启动 ====================
-app.listen(PORT, () => {
-  console.log('╔══════════════════════════════════════════╗');
-  console.log('║  🎯 IVL监管者人格测试 - 服务器已启动   ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  测试网站:  http://localhost:${PORT}         ║`);
-  console.log(`║  管理后台:  http://localhost:${PORT}/admin   ║`);
-  console.log('╚══════════════════════════════════════════╝');
-  console.log('');
-  console.log('💡 提示：关闭终端后服务将停止运行。');
-  console.log('   测试网站本身为纯静态页面，可直接打开 index.html 使用。');
-  console.log('   反馈功能需要启动此后端服务才能跨设备使用。');
-});
+// ==================== 启动（兼容本地和 Vercel） ====================
+if (process.env.VERCEL) {
+  // Vercel serverless 环境：导出 app
+  module.exports = app;
+} else {
+  // 本地环境：启动 HTTP 服务器
+  app.listen(PORT, () => {
+    console.log('╔══════════════════════════════════════════╗');
+    console.log('║  🎯 IVL监管者人格测试 - 服务器已启动   ║');
+    console.log('╠══════════════════════════════════════════╣');
+    console.log(`║  测试网站:  http://localhost:${PORT}         ║`);
+    console.log(`║  管理后台:  http://localhost:${PORT}/admin   ║`);
+    console.log('╚══════════════════════════════════════════╝');
+    console.log('');
+    console.log('💡 提示：关闭终端后服务将停止运行。');
+    console.log('   测试网站本身为纯静态页面，可直接打开 index.html 使用。');
+    console.log('   反馈功能需要启动此后端服务才能跨设备使用。');
+  });
+}
