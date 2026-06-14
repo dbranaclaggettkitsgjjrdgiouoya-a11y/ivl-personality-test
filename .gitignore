@@ -1,0 +1,5 @@
+node_modules/
+.claude/
+*.xlsx
+data/completions.json
+data/feedback.json

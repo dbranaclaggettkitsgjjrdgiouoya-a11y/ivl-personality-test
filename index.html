@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="你跟哪位IVL监管（现役/退役）最相似？趣味人格测试，仅供娱乐">
+  <meta property="og:title" content="IVL监管者人格测试 - 你跟哪位监管最相似？">
+  <meta property="og:description" content="10道题测出你的监管者人格，匹配17位真实IVL选手。仅供娱乐，切勿当真！">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IVL监管者人格测试">
+  <meta name="twitter:card" content="summary">
+  <title>IVL监管者人格测试 - 你跟哪位监管最相似？</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ========== 首页 ========== -->
+    <div class="page active" id="page-home">
+      <div class="home-header">
+        <div class="home-logo">🎯</div>
+        <h1 class="home-title">你跟哪位IVL监管（现役/退役）最相似？</h1>
+        <p class="home-subtitle">仅供娱乐，切勿当真</p>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btn-start">
+          <span>🚀</span> 开始测试
+        </button>
+        <button class="btn btn-secondary" id="btn-restart">
+          <span>🔄</span> 重新测试
+        </button>
+        <button class="btn btn-gold" id="btn-share-home">
+          <span>📤</span> 分享测试
+        </button>
+      </div>
+
+      <div class="home-stats">
+        <h3>📊 当前数据库概览</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value" id="stat-players">15</span>
+            <span class="stat-label">选手总数</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="stat-types">30+</span>
+            <span class="stat-label">人格类型</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 测试页 ========== -->
+    <div class="page" id="page-test">
+      <div class="test-header">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="progress-text">1 / 10</div>
+      </div>
+
+      <div class="question-card">
+        <span class="question-number" id="question-number">Q1</span>
+        <h2 class="question-title" id="question-title"></h2>
+      </div>
+
+      <div class="options-container" id="options-container"></div>
+
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btn-prev" style="display:none;">← 上一题</button>
+        <button class="btn-nav btn-next" id="btn-next" disabled>下一题 →</button>
+      </div>
+    </div>
+
+    <!-- ========== 加载页 ========== -->
+    <div class="page" id="page-loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text" id="loading-text">正在分析你的监管者基因...</p>
+      <div class="loading-bar">
+        <div class="loading-bar-fill" id="loading-bar-fill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- ========== 结果页 ========== -->
+    <div class="page" id="page-result">
+      <div class="result-header">
+        <div class="result-type-badge" id="result-type-name"></div>
+        <p class="result-type-label">你的监管者人格类型</p>
+      </div>
+
+      <!-- 雷达图 -->
+      <div class="radar-container">
+        <div class="radar-wrapper">
+          <canvas id="radar-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- 六维详情 -->
+      <div class="dimensions-card">
+        <h3>📐 六维分析详情</h3>
+        <div id="dimension-details"></div>
+      </div>
+
+      <!-- 最相似选手 -->
+      <div class="player-card" id="player-card"></div>
+
+      <!-- 操作按钮 -->
+      <div class="result-actions">
+        <button class="btn btn-primary" id="btn-share-result">
+          <span>📤</span> 分享我的结果
+        </button>
+        <button class="btn btn-secondary" id="btn-restart-result">
+          <span>🔄</span> 重新测试
+        </button>
+      </div>
+
+      <!-- 留言板块 -->
+      <div class="feedback-section">
+        <h3>💬 留言反馈</h3>
+        <div class="feedback-form">
+          <input class="feedback-input" id="feedback-nickname" placeholder="你的昵称（选填）" maxlength="20">
+          <textarea class="feedback-textarea" id="feedback-message" placeholder="写下你的感想或建议..." maxlength="500"></textarea>
+          <button class="btn-submit" id="btn-submit-feedback">提交留言</button>
+        </div>
+        <div class="feedback-list" id="feedback-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- JS 脚本 -->
+  <script src="js/data.js"></script>
+  <script src="js/radar.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

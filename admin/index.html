@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IVL人格测试 - 后台管理</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-card: #fafafa;
+      --bg-input: #f8f8f8;
+      --border: #e0e0e0;
+      --text: #1a1a1a;
+      --text-secondary: #555;
+      --text-muted: #999;
+      --accent: #1a1a1a;
+      --red: #c0392b;
+      --radius: 8px;
+      --font: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* 头部 */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding: 20px 24px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .header h1 { font-size: 1.3rem; font-weight: 500; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .btn {
+      padding: 8px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: var(--font);
+      background: #fff;
+      color: var(--text);
+    }
+    .btn:hover { background: #f0f0f0; border-color: #bbb; }
+    .btn-dark { background: var(--text); color: #fff; border-color: var(--text); }
+    .btn-dark:hover { background: #333; border-color: #333; }
+    .btn-danger { color: var(--red); border-color: #e8d0d0; }
+    .btn-danger:hover { background: #fef5f5; border-color: #e0b0b0; }
+
+    /* 统计卡片 */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      padding: 18px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-card .num { font-size: 1.8rem; font-weight: 300; color: var(--text); }
+    .stat-card .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* 选项卡 */
+    .tabs {
+      display: flex;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 10px 22px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: var(--font);
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+    }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+    .tab-btn:hover:not(.active) { color: var(--text-secondary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* 表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f5f5f5;
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+    }
+    td { color: var(--text-secondary); }
+    tr:hover td { background: rgba(0,0,0,0.015); }
+    .td-wide { max-width: 320px; white-space: normal; word-break: break-word; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .badge-active { background: #f5f5f5; color: var(--text-secondary); }
+    .badge-retired { color: var(--text-muted); }
+
+    /* 分数微条 */
+    .mini-bars { display: flex; gap: 3px; flex-wrap: wrap; }
+    .mini-bar {
+      display: flex; flex-direction: column; align-items: center;
+      font-size: 0.62rem; color: var(--text-muted); width: 48px;
+    }
+    .mini-bar .fill {
+      width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+    }
+    .mini-bar .fill-inner { height: 100%; background: var(--text); }
+
+    .empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text); color: #fff;
+      padding: 10px 24px; border-radius: 20px;
+      font-size: 0.85rem; z-index: 999;
+      opacity: 0; transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 768px) {
+      .header h1 { font-size: 1.1rem; }
+      table { font-size: 0.72rem; }
+      th, td { padding: 7px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 IVL人格测试 · 后台管理</h1>
+      <div class="header-actions">
+        <button class="btn" onclick="refreshData()">🔄 刷新</button>
+        <button class="btn btn-danger" onclick="clearData()">🗑️ 清空留言</button>
+        <button class="btn" onclick="exportCSV()">📥 导出CSV</button>
+      </div>
+    </div>
+
+    <!-- 统计 -->
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">总留言数</div></div>
+      <div class="stat-card"><div class="num" id="s-today">0</div><div class="lbl">今日新增</div></div>
+      <div class="stat-card"><div class="num">17</div><div class="lbl">选手库数量</div></div>
+      <div class="stat-card"><div class="num">30+</div><div class="lbl">人格类型</div></div>
+      <div class="stat-card"><div class="num">6</div><div class="lbl">数据维度</div></div>
+    </div>
+
+    <!-- 选项卡 -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('feedbacks')">💬 留言管理</button>
+      <button class="tab-btn" onclick="switchTab('monitor')">📈 数据监控</button>
+      <button class="tab-btn" onclick="switchTab('players')">👤 选手数据库</button>
+      <button class="tab-btn" onclick="switchTab('dimensions')">📐 六维概览</button>
+      <button class="tab-btn" onclick="switchTab('about')">ℹ️ 系统说明</button>
+    </div>
+
+    <!-- 数据监控 -->
+    <div class="tab-panel" id="tab-monitor">
+      <div class="stats" style="margin-bottom:18px;">
+        <div class="stat-card"><div class="num" id="m-total">0</div><div class="lbl">累计填写人数</div></div>
+        <div class="stat-card"><div class="num" id="m-today">0</div><div class="lbl">今日填写</div></div>
+        <div class="stat-card"><div class="num" id="m-players">0</div><div class="lbl">匹配最多选手</div></div>
+        <div class="stat-card"><div class="num" id="m-refresh">--</div><div class="lbl">下次刷新</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+        <!-- 今日每小时 -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+          <h4 style="font-size:0.85rem;font-weight:500;margin-bottom:12px;color:var(--text-secondary);">今日每小时填写量</h4>
+          <div id="chart-hourly" style="display:flex;align-items:flex-end;gap:2px;height:100px;"></div>
+        </div>
+        <!-- 近7天 -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+          <h4 style="font-size:0.85rem;font-weight:500;margin-bottom:12px;color:var(--text-secondary);">近7天填写趋势</h4>
+          <div id="chart-daily" style="display:flex;align-items:flex-end;gap:4px;height:100px;"></div>
+        </div>
+      </div>
+
+      <!-- 选手匹配分布 -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <h4 style="font-size:0.85rem;font-weight:500;margin-bottom:12px;color:var(--text-secondary);">选手匹配分布</h4>
+        <div id="player-dist"></div>
+      </div>
+    </div>
+
+    <!-- 留言管理 -->
+    <div class="tab-panel active" id="tab-feedbacks">
+      <div id="feedbacks-container"><div class="empty"><div class="icon">📭</div><p>暂无留言数据</p></div></div>
+    </div>
+
+    <!-- 选手数据库 -->
+    <div class="tab-panel" id="tab-players"><div id="players-container"></div></div>
+
+    <!-- 六维概览 -->
+    <div class="tab-panel" id="tab-dimensions">
+      <table>
+        <thead><tr><th>维度</th><th>键名</th><th>分值范围</th><th>相关题目</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>⚔️ 进攻性</td><td>aggression</td><td>0 - 3</td><td>Q1(B) Q4(B) Q9(A)</td><td class="td-wide">衡量选手在劣势或关键时刻是冒险进攻还是保守求稳。高分=激进冒险，低分=保守求稳。</td></tr>
+          <tr><td>♟️ 战术偏好</td><td>tactical</td><td>0 - 2</td><td>Q3(B) Q6(B/C) Q7(B/C)</td><td class="td-wide">衡量选手更注重微观操作/数据还是宏观思路/荣誉。高分=控场/思路/荣誉导向，低分=微观/数据导向。</td></tr>
+          <tr><td>🏆 成就取向</td><td>achievement</td><td>0 - 1</td><td>Q2(A/B)</td><td class="td-wide">衡量选手更认可"年少成名"的即战力还是"青春风暴"的未来潜力。1=看重当下实力，0=看重未来潜力。</td></tr>
+          <tr><td>🪞 自我认知</td><td>selfCognition</td><td>0 - 1</td><td>Q8(A/B/C)</td><td class="td-wide">衡量选手认为自己在他人眼中是天赋型、努力型还是两者并存。高分=天赋定位，低分=努力定位。</td></tr>
+          <tr><td>🍃 灵活性</td><td>flexibility</td><td>0 - 1</td><td>Q5(D/其他)</td><td class="td-wide">衡量选手对非游戏因素的随性程度与适应性。1=高度灵活随性。</td></tr>
+          <tr><td>🔥 赛前姿态</td><td>preMatch</td><td>0 - 1</td><td>Q10(A/B/C)</td><td class="td-wide">衡量选手在赛前喊话中的自信或幽默程度。高分=自信/张扬，低分=谦虚/低调。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 关于 -->
+    <div class="tab-panel" id="tab-about">
+      <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border);line-height:2;">
+        <p><strong>测试网站：</strong> <code>/index.html</code></p>
+        <p><strong>后台管理：</strong> <code>/admin/index.html</code></p>
+        <p><strong>数据存储：</strong> 前端 localStorage（离线可用）+ 后端 JSON 文件（需启动 server.js）</p>
+        <p><strong>选手数据：</strong> 17 位真实 IVL 监管者选手，数据来源 测试题.xlsx</p>
+        <p><strong>匹配算法：</strong> 六维欧几里得距离，取距离最近选手</p>
+        <p><strong>启动命令：</strong> <code>npm start</code> → <code>http://localhost:3000</code></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ============ 17位真实选手完整数据 ============
+    const PLAYERS = [
+      { name:'祈颜', team:'GG', status:'现役', answers:['B','A','A','B','D','B','A','B','B','A'],
+        scores:{aggression:2,tactical:1,achievement:1,selfCognition:0,flexibility:1,preMatch:0},
+        intro:'祈颜长期处于监管者榜前，是一名绝活女巫玩家，之前曾达到过万分女巫。在2021 IVL夏季赛中，帮助JHS获得仅有的三场胜利，拿下全部三个"光明之星"。已于2023年转会至GG俱乐部，后租借给DOU5。' },
+      { name:'梦幻小弥', team:'DOU5', status:'现役', answers:['A','B','A','B','D','A','A','A','A','A'],
+        scores:{aggression:2,tactical:0,achievement:0,selfCognition:1,flexibility:1,preMatch:0},
+        intro:'梦幻小弥，榜前知名监管者玩家。于2025 IVL夏季赛前加入DOU5俱乐部担任队内的监管者选手。' },
+      { name:'东玄', team:'FPX.ZQ', status:'现役', answers:['B','A','A','B','B','B','C','C','B','A'],
+        scores:{aggression:2,tactical:1.5,achievement:1,selfCognition:0.5,flexibility:0,preMatch:0},
+        intro:'东玄，擅长鹿头、红蝶、宿伞之魂、梦之女巫、红夫人等角色。深渊的呼唤Ⅵ冠军、2022 IVL夏季赛总决赛冠军。IVL首位淘汰人数达到1700人、首位震慑400次、首位击倒3000次、首位四杀200次的监管者选手。多次MVP及FMVP。' },
+      { name:'心安勿梦', team:'GG', status:'现役', answers:['B','A','B','B','A','B','C','C','B','B'],
+        scores:{aggression:2,tactical:2,achievement:1,selfCognition:0.5,flexibility:0,preMatch:0.5},
+        intro:'心安勿梦，曾用名觉觉、睡觉觉，擅长破轮、雕刻家、26号守卫、红夫人、歌剧演员等。深渊的呼唤Ⅳ/Ⅶ冠军，多次IVL总决赛冠军及FMVP。' },
+      { name:'年锦', team:'Gr', status:'现役', answers:['B','B','A','B','D','C','C','C','A','B'],
+        scores:{aggression:3,tactical:1,achievement:0,selfCognition:0.5,flexibility:1,preMatch:0.5},
+        intro:'年锦，擅长26号守卫、歌剧演员、红蝶等角色。2024 IVL秋季赛加入Gr，多次常规赛第一名，2024秋季赛最佳新秀，2025夏/秋季赛常规赛MVP。' },
+      { name:'小程', team:'MRC', status:'现役', answers:['A','A','A','B','C','B','B','B','B','B'],
+        scores:{aggression:1,tactical:2,achievement:1,selfCognition:0,flexibility:0,preMatch:0.5},
+        intro:'小程，擅长女巫、时空之影、红夫人、红蝶等，梦之女巫绝活玩家。深渊的呼唤Ⅸ冠军、2024 IVL秋季赛总决赛冠军及FMVP、2025秋季赛总决赛冠军。' },
+      { name:'白露', team:'MRC', status:'现役', answers:['B','B','A','B','C','C','C','C','A','B'],
+        scores:{aggression:3,tactical:1,achievement:0,selfCognition:0.5,flexibility:0,preMatch:0.5},
+        intro:'白露，擅长歌剧演员、红蝶、跛脚羊，绝活红夫人。深渊的呼唤Ⅸ冠军、2025 IVL秋季赛总决赛冠军及FMVP、2025夏季赛最佳新秀。' },
+      { name:'配配', team:'TE', status:'现役', answers:['B','B','A','A','D','A','B','C','A','B'],
+        scores:{aggression:2,tactical:1,achievement:0,selfCognition:0.5,flexibility:1,preMatch:0.5},
+        intro:'配配，擅长渔女、台球手、歌剧演员等。S1绝活渔女，深渊的呼唤Ⅵ加入WL，于2023 IVL夏季赛加入TE溯电子竞技俱乐部。' },
+      { name:'捏捏', team:'WBG', status:'现役', answers:['A','A','A','A','D','A','A','B','B','A'],
+        scores:{aggression:0,tactical:0,achievement:1,selfCognition:0,flexibility:1,preMatch:0},
+        intro:'雪碧捏捏，擅长邦邦等角色。曾任FTD监管者，2023年加入Gr，2025年转会至WBG。多次冠军荣誉。' },
+      { name:'宠爱', team:'Wolves', status:'现役', answers:['B','A','B','B','D','A','C','C','A','B'],
+        scores:{aggression:3,tactical:1.5,achievement:1,selfCognition:0.5,flexibility:1,preMatch:0.5},
+        intro:'宠爱，绝活小丑玩家，精通26号守卫、隐士、破轮、守夜人等。2023 IVL秋季赛总决赛冠军、2025夏季赛总决赛冠军。多次MVP，六/七周年年度震慑大师。' },
+      { name:'兔纸英明', team:'GW', status:'现役', answers:['B','A','A','B','D','B','A','B','A','C'],
+        scores:{aggression:3,tactical:1,achievement:1,selfCognition:0,flexibility:1,preMatch:1},
+        intro:'兔纸英明，擅长守夜人、歌剧演员、宿伞之魂等。深渊的呼唤Ⅶ用宿伞之魂四抓惊艳观众。先后效力DOU5、Meow、GW俱乐部。' },
+      { name:'杨某人', team:'ZQ', status:'退役', answers:['B','A','B','A','D','B','B','A','A','C'],
+        scores:{aggression:2,tactical:2,achievement:1,selfCognition:1,flexibility:1,preMatch:1},
+        intro:'杨某人，擅长梦之女巫、渔女、红夫人、摄影师等。2020-2021夏/秋季赛冠军，最佳MVP监管者。信仰之光约瑟夫，曾两度创造赛场奇迹。' },
+      { name:'皮皮限', team:'Gr', status:'退役', answers:['A','A','B','A','A','C','C','C','B','A'],
+        scores:{aggression:0,tactical:2,achievement:1,selfCognition:0.5,flexibility:0,preMatch:0},
+        intro:'皮皮限，第五人格元老选手，深渊的呼唤Ⅰ亚军，后加入Gr拿到三冠一亚。擅长26号守卫、梦之女巫、红蝶等。2024年正式退役，Gr战队正式落幕。' },
+      { name:'皮皮虾', team:'GG', status:'现役', answers:['A','A','B','A','A','A','C','C','B','A'],
+        scores:{aggression:0,tactical:1.5,achievement:1,selfCognition:0.5,flexibility:0,preMatch:0},
+        intro:'皮皮虾，擅长26号守卫、小提琴家、雕刻家等，多个赛季S1邦邦。人屠双七阶。深渊的呼唤Ⅳ FMVP，深渊Ⅳ/Ⅶ冠军。' },
+      { name:'鱼生', team:'ZQ', status:'退役', answers:['A','A','B','A','D','A','B','C','B','A'],
+        scores:{aggression:0,tactical:2,achievement:1,selfCognition:0.5,flexibility:1,preMatch:0},
+        intro:'鱼生，全名昏迹鱼生，擅长蜘蛛、杰克、26号守卫等追击型监管者。职业化后加入ZQ俱乐部。2020 IVL夏/秋季赛总决赛冠军，夏季赛FMVP。' },
+      { name:'爱丽', team:'WBG', status:'退役', answers:['A','A','B','A','D','C','C','C','B','A'],
+        scores:{aggression:0,tactical:2,achievement:1,selfCognition:0.5,flexibility:1,preMatch:0},
+        intro:'爱丽，又名艾利克斯，擅长破轮、雕刻家、歌剧演员等。PC端转手搓，深渊的呼唤Ⅴ冠军及FMVP，2021 IVL夏/秋季赛冠军。三周年人气主播，四周年震慑大师。' },
+      { name:'针针9', team:'ACT', status:'现役', answers:['B','A','A','A','D','B','A','A','B','A'],
+        scores:{aggression:1,tactical:1,achievement:1,selfCognition:1,flexibility:1,preMatch:0},
+        intro:'针针9，擅长女巫、歌剧演员、时空之影角色。2025年2月加入ACT俱乐部。' }
+    ];
+
+    const DIM_LABELS = ['进攻性','战术偏好','成就取向','自我认知','灵活性','赛前姿态'];
+    const DIM_KEYS = ['aggression','tactical','achievement','selfCognition','flexibility','preMatch'];
+    const DIM_MAX = [3,2,1,1,1,1];
+
+    // ============ 工具 ============
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+    function toast(msg) {
+      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+    function fd(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+    // ============ 选项卡 ============
+    function switchTab(name) {
+      $$('.tab-btn').forEach(b => b.classList.remove('active'));
+      $$('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick*="${name}"]`).classList.add('active');
+      $('#tab-'+name).classList.add('active');
+      if (name === 'players') renderPlayers();
+      if (name === 'feedbacks') renderFeedbacks();
+      if (name === 'monitor') { loadMonitor(); startMonitorTimer(); }
+      else stopMonitorTimer();
+    }
+
+    // ============ 数据 ============
+    function getFeedbacks() {
+      try { return JSON.parse(localStorage.getItem('ivl_test_feedbacks')||'[]'); }
+      catch(e) { return []; }
+    }
+
+    async function refreshData() {
+      try {
+        const r = await fetch('/api/feedback');
+        if (r.ok) { const d = await r.json(); localStorage.setItem('ivl_test_feedbacks', JSON.stringify(d)); }
+      } catch(e) {}
+      const fbs = getFeedbacks();
+      $('#s-total').textContent = fbs.length;
+      const today = new Date().toISOString().slice(0,10);
+      $('#s-today').textContent = fbs.filter(f => (f.timestamp||'').startsWith(today)).length;
+      renderFeedbacks();
+      toast('数据已刷新');
+    }
+
+    function renderFeedbacks() {
+      const fbs = getFeedbacks();
+      const c = $('#feedbacks-container');
+      $('#s-total').textContent = fbs.length;
+      const today = new Date().toISOString().slice(0,10);
+      $('#s-today').textContent = fbs.filter(f => (f.timestamp||'').startsWith(today)).length;
+      if (!fbs.length) { c.innerHTML = '<div class="empty"><div class="icon">📭</div><p>暂无留言数据</p></div>'; return; }
+      c.innerHTML = `<div style="overflow-x:auto;"><table>
+        <thead><tr><th>时间</th><th>昵称</th><th>留言</th><th>人格类型</th><th>匹配选手</th></tr></thead>
+        <tbody>${fbs.map(f => `<tr>
+          <td>${fd(f.timestamp)}</td><td>${esc(f.nickname||'匿名')}</td>
+          <td class="td-wide">${esc(f.message||'')}</td>
+          <td><span class="badge badge-active">${esc(f.typeName||'-')}</span></td>
+          <td>${esc(f.matchPlayer||'-')}</td>
+        </tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function renderPlayers() {
+      const c = $('#players-container');
+      c.innerHTML = `<div style="overflow-x:auto;"><table>
+        <thead><tr><th>#</th><th>选手名</th><th>战队</th><th>状态</th><th>答案(1-10)</th><th>六维得分</th><th>简介</th></tr></thead>
+        <tbody>${PLAYERS.map((p,i) => `<tr>
+          <td>${i+1}</td><td style="color:var(--text);font-weight:500;">${esc(p.name)}</td>
+          <td>${esc(p.team)}</td>
+          <td><span class="badge ${p.status==='现役'?'badge-active':'badge-retired'}">${esc(p.status)}</span></td>
+          <td style="font-size:0.7rem;letter-spacing:0.5px;">${p.answers.join(' ')}</td>
+          <td>
+            <div class="mini-bars">
+              ${DIM_KEYS.map((k,j) => {
+                const pct = Math.round(p.scores[k]/DIM_MAX[j]*100);
+                return `<div class="mini-bar" title="${DIM_LABELS[j]}: ${p.scores[k]}/${DIM_MAX[j]}">
+                  <span>${DIM_LABELS[j].charAt(0)}</span>
+                  <div class="fill"><div class="fill-inner" style="width:${pct}%"></div></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </td>
+          <td class="td-wide">${esc(p.intro||'')}</td>
+        </tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function clearData() {
+      if (!confirm('确定清空所有留言数据？不可恢复！')) return;
+      localStorage.removeItem('ivl_test_feedbacks');
+      fetch('/api/feedback/clear',{method:'POST'}).catch(()=>{});
+      refreshData();
+    }
+
+    function exportCSV() {
+      const fbs = getFeedbacks();
+      if (!fbs.length) { toast('无数据可导出'); return; }
+      let csv = '﻿时间,昵称,留言,人格类型,匹配选手\n';
+      fbs.forEach(f => {
+        csv += `"${fd(f.timestamp)}","${f.nickname||'匿名'}","${(f.message||'').replace(/"/g,'""')}","${f.typeName||''}","${f.matchPlayer||''}"\n`;
+      });
+      const b = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = `ivl_feedback_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+      URL.revokeObjectURL(a.href); toast('CSV已下载');
+    }
+
+    // ============ 数据监控 ============
+    let monitorTimer = null;
+
+    function loadMonitor() {
+      const local = getCompletions();
+      // 优先从后端获取
+      fetch('/api/completions').then(r => r.json()).then(data => {
+        renderMonitor(data);
+      }).catch(() => {
+        // 回退到本地数据
+        const now = new Date();
+        const today = now.toISOString().slice(0,10);
+        const todayCount = local.filter(d => (d.timestamp||'').startsWith(today)).length;
+        const hourly = {}; for (let h=0;h<24;h++) hourly[String(h).padStart(2,'0')]=0;
+        local.filter(d => (d.timestamp||'').startsWith(today)).forEach(d => { const h=d.timestamp.slice(11,13); if(hourly[h]!==undefined) hourly[h]++; });
+        const daily = {}; for (let i=6;i>=0;i--) { const d=new Date(now); d.setDate(d.getDate()-i); daily[d.toISOString().slice(0,10)]=0; }
+        local.forEach(d => { const day=(d.timestamp||'').slice(0,10); if(daily[day]!==undefined) daily[day]++; });
+        const pd = {}; local.forEach(d => { const p=d.matchPlayer||'未知'; pd[p]=(pd[p]||0)+1; });
+        renderMonitor({ total:local.length, todayCount, hourly, daily, playerDist:pd });
+      });
+    }
+
+    function getCompletions() {
+      try { return JSON.parse(localStorage.getItem('ivl_test_completions')||'[]'); }
+      catch(e) { return []; }
+    }
+
+    function renderMonitor(data) {
+      $('#m-total').textContent = data.total || 0;
+      $('#m-today').textContent = data.todayCount || 0;
+
+      // 匹配最多选手
+      let topPlayer = '-', topCount = 0;
+      if (data.playerDist) {
+        Object.entries(data.playerDist).forEach(([k,v]) => { if (v>topCount) { topCount=v; topPlayer=k; } });
+      }
+      $('#m-players').textContent = topPlayer !== '-' ? topPlayer : '-';
+
+      // 每小时柱状图
+      const hContainer = $('#chart-hourly');
+      if (data.hourly) {
+        const hVals = Object.values(data.hourly);
+        const hMax = Math.max(1, ...hVals);
+        hContainer.innerHTML = Object.entries(data.hourly).map(([h,v]) => {
+          const hh = Math.max(2, Math.round(v/hMax*96));
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;" title="${h}:00 — ${v}人">
+            <span style="font-size:0.58rem;color:var(--text-muted);">${v||''}</span>
+            <div style="width:100%;height:${hh}px;background:${v>0?'var(--text)':'var(--border)'};border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:0.55rem;color:var(--text-muted);">${h}</span>
+          </div>`;
+        }).join('');
+      }
+
+      // 近7天柱状图
+      const dContainer = $('#chart-daily');
+      if (data.daily) {
+        const dVals = Object.values(data.daily);
+        const dMax = Math.max(1, ...dVals);
+        dContainer.innerHTML = Object.entries(data.daily).map(([day,v]) => {
+          const hh = Math.max(2, Math.round(v/dMax*96));
+          const label = day.slice(5);
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;" title="${day} — ${v}人">
+            <span style="font-size:0.58rem;color:var(--text-muted);">${v||''}</span>
+            <div style="width:100%;height:${hh}px;background:${v>0?'var(--text)':'var(--border)'};border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:0.55rem;color:var(--text-muted);">${label}</span>
+          </div>`;
+        }).join('');
+      }
+
+      // 选手分布
+      const pdContainer = $('#player-dist');
+      if (data.playerDist) {
+        const sorted = Object.entries(data.playerDist).sort((a,b) => b[1]-a[1]);
+        const pdMax = Math.max(1, sorted[0]?.[1] || 1);
+        pdContainer.innerHTML = sorted.map(([name,count]) => {
+          const w = Math.round(count/pdMax*100);
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="width:80px;font-size:0.75rem;text-align:right;flex-shrink:0;">${esc(name)}</span>
+            <div style="flex:1;height:14px;background:var(--border);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${w}%;background:var(--text);border-radius:3px;"></div>
+            </div>
+            <span style="font-size:0.7rem;color:var(--text-muted);width:28px;">${count}</span>
+          </div>`;
+        }).join('');
+      }
+
+      // 下次刷新倒计时
+      updateRefreshCountdown();
+    }
+
+    function updateRefreshCountdown() {
+      const now = new Date();
+      const min5 = 5 * 60 * 1000;
+      const elapsed = (now.getTime() % min5);
+      const remaining = Math.ceil((min5 - elapsed) / 1000);
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      $('#m-refresh').textContent = m + '分' + String(s).padStart(2,'0') + '秒';
+    }
+
+    let countdownInterval = null;
+    function startMonitorTimer() {
+      stopMonitorTimer();
+      // 每5分钟刷新数据
+      monitorTimer = setInterval(() => { loadMonitor(); }, 5 * 60 * 1000);
+      // 每秒更新倒计时
+      countdownInterval = setInterval(updateRefreshCountdown, 1000);
+    }
+    function stopMonitorTimer() {
+      if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; }
+      if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    }
+
+    // ============ 初始化 ============
+    refreshData();
+  </script>
+</body>
+</html>
