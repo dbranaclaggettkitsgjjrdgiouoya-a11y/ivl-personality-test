@@ -807,7 +807,17 @@
       } catch(e) { $('#p-save-status').textContent = '⚠️ 失败'; }
     }
     function ensureEditable() {
-      if (!editablePlayers.length) editablePlayers = JSON.parse(JSON.stringify(PLAYERS));
+      if (!editablePlayers.length) {
+        // 优先从 localStorage 恢复未同步的修改
+        try {
+          const cached = localStorage.getItem('ivl_editable_players');
+          if (cached) { editablePlayers = JSON.parse(cached); return; }
+        } catch(e) {}
+        editablePlayers = JSON.parse(JSON.stringify(PLAYERS));
+      }
+    }
+    function cacheEditable() {
+      try { localStorage.setItem('ivl_editable_players', JSON.stringify(editablePlayers)); } catch(e) {}
     }
     function editPlayer(idx) {
       ensureEditable();
@@ -859,6 +869,7 @@
       });
       p.scores.tactical = Math.min(p.scores.tactical, 2);
       editablePlayers[idx] = p;
+      cacheEditable();
       $('#player-editor').style.display = 'none';
       renderPlayers();
       $('#p-save-status').textContent = '已修改: ' + p.name + '（点击"保存到云端"同步）';
@@ -868,6 +879,7 @@
       ensureEditable();
       var np = {id:'player_'+Date.now(),name:'新选手',team:'TEAM',status:'现役',photo:'',answers:['A','A','A','A','A','A','A','A','A','A'],intro:'简介',scores:{aggression:0,tactical:0,achievement:0,selfCognition:0,flexibility:0,preMatch:0}};
       editablePlayers.push(np);
+      cacheEditable();
       renderPlayers();
       editPlayer(editablePlayers.length-1);
     }
@@ -876,6 +888,7 @@
       var name = editablePlayers[idx] ? editablePlayers[idx].name : '';
       if (!confirm('确定删除 ' + name + ' 吗？')) return;
       editablePlayers.splice(idx, 1);
+      cacheEditable();
       renderPlayers();
       $('#p-save-status').textContent = '已删除 ' + name + '（点击"保存到云端"同步）';
       toast('选手 ' + name + ' 已删除');
