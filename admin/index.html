@@ -269,9 +269,49 @@
     </div>
   </div>
 
+  <!-- 登录界面 -->
+  <div id="login-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:12px;padding:40px 32px;width:340px;max-width:90vw;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:8px;">🔐</div>
+      <h2 style="font-size:1.2rem;font-weight:500;margin-bottom:4px;">IVL 后台管理</h2>
+      <p style="font-size:0.8rem;color:#999;margin-bottom:24px;">请输入账户名和密码</p>
+      <input id="login-user" type="text" placeholder="账户名" autocomplete="off" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9rem;margin-bottom:10px;outline:none;font-family:inherit;box-sizing:border-box;">
+      <input id="login-pass" type="password" placeholder="密码" autocomplete="off" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9rem;margin-bottom:6px;outline:none;font-family:inherit;box-sizing:border-box;">
+      <p id="login-error" style="font-size:0.75rem;color:#c0392b;min-height:20px;margin-bottom:8px;"></p>
+      <button id="login-btn" style="width:100%;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-family:inherit;font-weight:500;">登 录</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
+    // ============ 登录验证 ============
+    (function checkLogin() {
+      const overlay = document.getElementById('login-overlay');
+      // sessionStorage 在浏览器关闭后自动清除
+      if (sessionStorage.getItem('ivl_admin_auth') === 'true') {
+        overlay.style.display = 'none';
+        return;
+      }
+      overlay.style.display = 'flex';
+    })();
+
+    document.getElementById('login-btn').addEventListener('click', function() {
+      const u = document.getElementById('login-user').value.trim();
+      const p = document.getElementById('login-pass').value.trim();
+      const err = document.getElementById('login-error');
+      if (u === 'admin' && p === 'ivl2026') {
+        sessionStorage.setItem('ivl_admin_auth', 'true');
+        document.getElementById('login-overlay').style.display = 'none';
+      } else {
+        err.textContent = '账户名或密码错误，请重试';
+      }
+    });
+
+    document.getElementById('login-pass').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('login-btn').click();
+    });
+
     // ============ 后端 API ============
     const API_BASE = 'https://master.ivl-personality-test.pages.dev';
 
