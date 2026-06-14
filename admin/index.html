@@ -490,7 +490,9 @@
     }
 
     function renderPlayers() {
+      try {
       const c = $('#players-container');
+      if (!c) return;
       const players = editablePlayers.length ? editablePlayers : PLAYERS;
       c.innerHTML = `<div style="overflow-x:auto;"><table>
         <thead><tr><th>#</th><th>选手名</th><th>战队</th><th>状态</th><th>答案</th><th>简介</th><th>操作</th></tr></thead>
@@ -506,6 +508,7 @@
             <button class="btn btn-danger" style="padding:3px 10px;font-size:0.7rem;" onclick="deletePlayer(${i})">🗑️ 删除</button>
           </td>
         </tr>`).join('')}</tbody></table></div>`;
+      } catch(e) { toast('选手渲染失败: '+e.message); }
     }
 
     function clearData() {
@@ -835,8 +838,11 @@
       ed.scrollIntoView({behavior:'smooth'});
     }
     function savePlayerEdit(idx) {
+      try {
       ensureEditable();
       const oldId = editablePlayers[idx] ? editablePlayers[idx].id : ('player_'+Date.now());
+      const elName = document.getElementById('ep-name');
+      if (!elName) { toast('编辑表单未找到，请重新点击编辑'); return; }
       const ansStr = document.getElementById('ep-answers').value.trim();
       const answers = ansStr ? ansStr.split(/[ ]+/) : [];
       const p = {
@@ -869,6 +875,7 @@
       renderPlayers();
       $('#p-save-status').textContent = '已修改: ' + p.name + '（点击"保存到云端"同步）';
       toast('选手 ' + p.name + ' 已更新');
+      } catch(e) { toast('保存失败: '+e.message); }
     }
     function addPlayer() {
       ensureEditable();
