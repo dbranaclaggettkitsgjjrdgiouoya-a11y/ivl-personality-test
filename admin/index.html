@@ -493,24 +493,18 @@
       const c = $('#players-container');
       const players = editablePlayers.length ? editablePlayers : PLAYERS;
       c.innerHTML = `<div style="overflow-x:auto;"><table>
-        <thead><tr><th>#</th><th>选手名</th><th>战队</th><th>状态</th><th>答案(1-10)</th><th>六维得分</th><th>简介</th></tr></thead>
-        <tbody>${PLAYERS.map((p,i) => `<tr>
-          <td>${i+1}</td><td style="color:var(--text);font-weight:500;">${esc(p.name)}</td>
+        <thead><tr><th>#</th><th>选手名</th><th>战队</th><th>状态</th><th>答案</th><th>简介</th><th>操作</th></tr></thead>
+        <tbody>${players.map((p,i) => `<tr>
+          <td>${i+1}</td>
+          <td style="color:var(--text);font-weight:500;">${esc(p.name)}</td>
           <td>${esc(p.team)}</td>
           <td><span class="badge ${p.status==='现役'?'badge-active':'badge-retired'}">${esc(p.status)}</span></td>
-          <td style="font-size:0.7rem;letter-spacing:0.5px;">${p.answers.join(' ')}</td>
-          <td>
-            <div class="mini-bars">
-              ${DIM_KEYS.map((k,j) => {
-                const pct = Math.round(p.scores[k]/DIM_MAX[j]*100);
-                return `<div class="mini-bar" title="${DIM_LABELS[j]}: ${p.scores[k]}/${DIM_MAX[j]}">
-                  <span>${DIM_LABELS[j].charAt(0)}</span>
-                  <div class="fill"><div class="fill-inner" style="width:${pct}%"></div></div>
-                </div>`;
-              }).join('')}
-            </div>
+          <td style="font-size:0.7rem;">${(p.answers||[]).join(' ')}</td>
+          <td class="td-wide" style="max-width:200px;font-size:0.75rem;">${esc((p.intro||'').slice(0,50))}...</td>
+          <td style="white-space:nowrap;">
+            <button class="btn" style="padding:3px 10px;font-size:0.7rem;" onclick="editPlayer(${i})">✏️ 编辑</button>
+            <button class="btn btn-danger" style="padding:3px 10px;font-size:0.7rem;" onclick="deletePlayer(${i})">🗑️ 删除</button>
           </td>
-          <td class="td-wide">${esc(p.intro||'')}</td>
         </tr>`).join('')}</tbody></table></div>`;
     }
 
@@ -796,6 +790,7 @@
       try { const r = await fetch(API_BASE + '/api/players'); if (r.ok) editablePlayers = await r.json(); }
       catch(e) { editablePlayers = [...PLAYERS]; }
       if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      cacheEditable();
       renderPlayers(); $('#p-save-status').textContent = '已加载 '+editablePlayers.length+' 位';
     }
     async function savePlayersToCloud() {
