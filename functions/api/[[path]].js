@@ -188,7 +188,7 @@ function extractDimensions(questions) {
 
 function getDefaultPlayers() {
   return [
-    {"id":"qiyan","name":"祈颜","team":"GG","status":"现役","photo":"祈颜.png","answers":["B","A","A","B","D","B","A","B","B","A"],"intro":"祈颜长期处于监管者榜前，是一名绝活女巫玩家，之前曾达到过万分女巫。在2021 IVL 夏季赛中，帮助所在战队JHS获得仅有的三场胜利，他也拿下了全部三个"光明之星"。祈颜已于2023年5月29日从Reborn俱乐部转会至GG俱乐部，后租借给DOU5俱乐部。"},
+    {"id":"qiyan","name":"祈颜","team":"GG","status":"现役","photo":"祈颜.png","answers":["B","A","A","B","D","B","A","B","B","A"],"intro":"祈颜长期处于监管者榜前，是一名绝活女巫玩家，之前曾达到过万分女巫。在2021 IVL 夏季赛中，帮助所在战队JHS获得仅有的三场胜利，他也拿下了全部三个「光明之星」。祈颜已于2023年5月29日从Reborn俱乐部转会至GG俱乐部，后租借给DOU5俱乐部。"},
     {"id":"menghuanxiaomi","name":"梦幻小弥","team":"DOU5","status":"现役","photo":"梦幻小弥.png","answers":["A","B","A","B","D","A","A","A","A","A"],"intro":"梦幻小弥，榜前知名监管者玩家。于2025 IVL 夏季赛前加入DOU5俱乐部担任队内的监管者选手。"},
     {"id":"dongxuan","name":"东玄","team":"FPX.ZQ","status":"现役","photo":"东玄.png","answers":["B","A","A","B","B","B","C","C","B","A"],"intro":"东玄，中国大陆赛区监管者阵营选手，擅长鹿头、红蝶、宿伞之魂、梦之女巫、红夫人等角色。20年夏季赛前加入DOU5俱乐部，2023秋季赛转会加入FPX.ZQ俱乐部。深渊的呼唤Ⅵ冠军、2022 IVL夏季赛总决赛冠军、IVL首位淘汰人数达到1700人的监管者选手、多次获得常规赛MVP及FMVP。"},
     {"id":"xinanzhimeng","name":"心安勿梦","team":"GG","status":"现役","photo":"心安勿梦.png","answers":["B","A","B","B","A","B","C","C","B","B"],"intro":"心安勿梦，曾常用名觉觉、睡觉觉，是一名榜前屠夫玩家，擅长破轮、雕刻家、26号守卫、红夫人、歌剧演员等角色，自IVL创建伊始便加入GG战队。深渊的呼唤Ⅳ冠军、深渊的呼唤Ⅶ冠军、多次IVL总决赛冠军及FMVP。"},
