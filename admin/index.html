@@ -422,7 +422,7 @@
       $$('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelector(`.tab-btn[onclick*="${name}"]`).classList.add('active');
       $('#tab-'+name).classList.add('active');
-      if (name === 'players') renderPlayers();
+      if (name === 'players') { if (!editablePlayers.length) loadPlayersFromCloud(); else renderPlayers(); }
       if (name === 'feedbacks') renderFeedbacks();
       if (name === 'monitor') { loadMonitor(); startMonitorTimer(); }
       else stopMonitorTimer();
