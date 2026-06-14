@@ -200,6 +200,7 @@
       <button class="tab-btn active" onclick="switchTab('feedbacks')">💬 留言管理</button>
       <button class="tab-btn" onclick="switchTab('monitor')">📈 数据监控</button>
       <button class="tab-btn" onclick="switchTab('players')">👤 选手数据库</button>
+      <button class="tab-btn" onclick="switchTab('questions')">📝 题目管理</button>
       <button class="tab-btn" onclick="switchTab('dimensions')">📐 六维概览</button>
       <button class="tab-btn" onclick="switchTab('about')">ℹ️ 系统说明</button>
     </div>
@@ -240,6 +241,18 @@
 
     <!-- 选手数据库 -->
     <div class="tab-panel" id="tab-players"><div id="players-container"></div></div>
+
+    <!-- 题目管理 -->
+    <div class="tab-panel" id="tab-questions">
+      <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-dark" onclick="showQuestionEditor()">＋ 新增题目</button>
+        <button class="btn" onclick="loadQuestionsFromCloud()">☁️ 从云端加载</button>
+        <button class="btn" onclick="saveQuestionsToCloud()">💾 保存到云端</button>
+        <span id="q-save-status" style="font-size:0.8rem;color:var(--text-muted);align-self:center;"></span>
+      </div>
+      <div id="questions-container"><div class="empty"><div class="icon">⏳</div><p>点击"从云端加载"获取题目数据</p></div></div>
+      <div id="question-editor" style="display:none;"></div>
+    </div>
 
     <!-- 六维概览 -->
     <div class="tab-panel" id="tab-dimensions">
@@ -397,6 +410,7 @@
       if (name === 'feedbacks') renderFeedbacks();
       if (name === 'monitor') { loadMonitor(); startMonitorTimer(); }
       else stopMonitorTimer();
+      if (name === 'questions') { loadQuestionsFromCloud(); }
     }
 
     // ============ 数据 ============
@@ -480,6 +494,148 @@
     }
 
     // ============ 数据监控 ============
+    let editQuestions = [];
+
+    async function loadQuestionsFromCloud() {
+      $('#q-save-status').textContent = '加载中...';
+      try {
+        const r = await fetch(API_BASE + '/api/questions');
+        if (r.ok) { editQuestions = await r.json(); }
+      } catch(e) {
+        try { editQuestions = JSON.parse(localStorage.getItem('ivl_questions')||'[]'); } catch(e2) { editQuestions = []; }
+      }
+      if (!editQuestions.length) {
+        editQuestions = getDefaultQuestions();
+      }
+      localStorage.setItem('ivl_questions', JSON.stringify(editQuestions));
+      renderQuestions();
+      $('#q-save-status').textContent = '已加载 ' + editQuestions.length + ' 道题目';
+    }
+
+    async function saveQuestionsToCloud() {
+      $('#q-save-status').textContent = '保存中...';
+      try {
+        await fetch(API_BASE + '/api/questions', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({questions:editQuestions})
+        });
+        $('#q-save-status').textContent = '✅ 已同步到云端 (' + editQuestions.length + ' 题)';
+      } catch(e) {
+        localStorage.setItem('ivl_questions', JSON.stringify(editQuestions));
+        $('#q-save-status').textContent = '⚠️ 仅保存到本地';
+      }
+    }
+
+    function renderQuestions() {
+      const c = $('#questions-container');
+      if (!editQuestions.length) { c.innerHTML = '<div class="empty"><div class="icon">📭</div><p>暂无题目</p></div>'; return; }
+      c.innerHTML = editQuestions.map((q,i) => `
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <strong style="font-size:0.9rem;">Q${q.id} ${esc(q.title||'')}</strong>
+            <div style="display:flex;gap:6px;">
+              <button class="btn" style="padding:4px 12px;font-size:0.7rem;" onclick="editQuestion(${i})">✏️ 编辑</button>
+              <button class="btn btn-danger" style="padding:4px 12px;font-size:0.7rem;" onclick="deleteQuestion(${i})">🗑️</button>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:6px;">
+            ${(q.options||[]).map(o => `<span style="margin-right:12px;">${o.key}. ${esc((o.text||'').slice(0,30))}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+      $('#question-editor').style.display = 'none';
+    }
+
+    function showQuestionEditor(idx) {
+      const q = idx !== undefined ? editQuestions[idx] : {id: editQuestions.length+1, title:'', options:[{key:'A',text:'',scores:{}},{key:'B',text:'',scores:{}}]};
+      const ed = $('#question-editor');
+      ed.style.display = 'block';
+      ed.innerHTML = `
+        <div style="background:var(--bg-card);border:2px solid var(--text);border-radius:var(--radius);padding:18px;margin-top:12px;">
+          <h4 style="margin-bottom:12px;">${idx!==undefined?'编辑题目':'新增题目'}</h4>
+          <div style="margin-bottom:8px;">
+            <label style="font-size:0.8rem;">题目ID</label>
+            <input id="eq-id" type="number" value="${q.id}" style="width:60px;padding:6px;border:1px solid var(--border);border-radius:4px;margin-left:8px;font-family:inherit;">
+          </div>
+          <div style="margin-bottom:8px;">
+            <label style="font-size:0.8rem;">题目内容</label>
+            <input id="eq-title" value="${esc(q.title)}" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:4px;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:0.8rem;">选项</label>
+            <div id="eq-options">
+              ${(q.options||[]).map((o,oi) => `
+                <div style="display:flex;gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap;">
+                  <input value="${o.key}" style="width:36px;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;" placeholder="键">
+                  <input value="${esc(o.text)}" style="flex:1;min-width:200px;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;" placeholder="选项文字">
+                  <select style="padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.75rem;width:100px;" onchange="updateOptionScore(this, ${oi})" title="计分维度">
+                    <option value="">不计分</option>
+                    <option value="aggression:1">进攻性 +1</option>
+                    <option value="tactical:1">战术偏好 +1</option>
+                    <option value="tactical:0.5">战术偏好 +0.5</option>
+                    <option value="achievement:1">成就取向 +1</option>
+                    <option value="achievement:0">成就取向 0</option>
+                    <option value="selfCognition:1">自我认知 +1</option>
+                    <option value="selfCognition:0">自我认知 0</option>
+                    <option value="selfCognition:0.5">自我认知 +0.5</option>
+                    <option value="flexibility:1">灵活性 +1</option>
+                    <option value="preMatch:0">赛前姿态 0</option>
+                    <option value="preMatch:0.5">赛前姿态 +0.5</option>
+                    <option value="preMatch:1">赛前姿态 +1</option>
+                  </select>
+                  <button class="btn btn-danger" style="padding:4px 8px;font-size:0.65rem;" onclick="this.parentElement.remove()">✕</button>
+                </div>
+              `).join('')}
+            </div>
+            <button class="btn" style="padding:4px 12px;font-size:0.7rem;margin-top:6px;" onclick="addOptionRow()">＋ 添加选项</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-dark" onclick="saveQuestion(${idx!==undefined?idx:'-1'})">💾 保存</button>
+            <button class="btn" onclick="renderQuestions()">取消</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveQuestion(idx) {
+      const q = {
+        id: parseInt($('#eq-id').value) || 1,
+        title: $('#eq-title').value.trim(),
+        options: []
+      };
+      const optionRows = $$('#eq-options > div');
+      optionRows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const select = row.querySelector('select');
+        const key = inputs[0].value.trim();
+        const text = inputs[1].value.trim();
+        const scores = {};
+        const selVal = select ? select.value : '';
+        if (selVal) { const [dim,val] = selVal.split(':'); scores[dim] = parseFloat(val); }
+        if (key) q.options.push({key, text, scores});
+      });
+      if (!q.title || q.options.length < 2) { toast('题目内容和至少2个选项不能为空'); return; }
+      if (idx >= 0) { editQuestions[idx] = q; } else { editQuestions.push(q); }
+      renderQuestions();
+      $('#q-save-status').textContent = '已修改（未保存到云端）';
+    }
+
+    function deleteQuestion(idx) {
+      if (!confirm('确定删除 Q' + editQuestions[idx].id + '？')) return;
+      editQuestions.splice(idx, 1);
+      renderQuestions();
+      $('#q-save-status').textContent = '已删除（未保存到云端）';
+    }
+
+    function addOptionRow() {
+      const opts = $('#eq-options');
+      const nextKey = String.fromCharCode(65 + opts.children.length);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap;';
+      row.innerHTML = `<input value="${nextKey}" style="width:36px;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;"><input style="flex:1;min-width:200px;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;" placeholder="选项文字"><select style="padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.75rem;width:100px;"><option value="">不计分</option><option value="aggression:1">进攻性 +1</option><option value="tactical:1">战术偏好 +1</option><option value="tactical:0.5">战术偏好 +0.5</option><option value="achievement:1">成就取向 +1</option><option value="selfCognition:1">自我认知 +1</option><option value="selfCognition:0.5">自我认知 +0.5</option><option value="flexibility:1">灵活性 +1</option><option value="preMatch:0.5">赛前姿态 +0.5</option><option value="preMatch:1">赛前姿态 +1</option></select><button class="btn btn-danger" style="padding:4px 8px;font-size:0.65rem;" onclick="this.parentElement.remove()">✕</button>`;
+      opts.appendChild(row);
+    }
+
     let monitorTimer = null;
 
     function loadMonitor() {

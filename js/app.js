@@ -7,6 +7,23 @@
   // ==================== 后端 API 地址 ====================
   const API_BASE = 'https://master.ivl-personality-test.pages.dev';
 
+  // ==================== 动态题目加载 ====================
+  let QUESTIONS_LOADED = QUESTIONS; // 默认使用 data.js 中的题目
+
+  async function loadQuestions() {
+    try {
+      const resp = await fetch(API_BASE + '/api/questions');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.length > 0) {
+          QUESTIONS_LOADED = data;
+          return;
+        }
+      }
+    } catch (e) {}
+    QUESTIONS_LOADED = QUESTIONS; // 回退到本地
+  }
+
   // ==================== 应用状态 ====================
   const STATE = {
     currentQuestion: 0,
@@ -76,7 +93,7 @@
 
   // ==================== 测试页 ====================
   function renderQuestion() {
-    const q = QUESTIONS[STATE.currentQuestion];
+    const q = QUESTIONS_LOADED[STATE.currentQuestion];
     if (!q) return;
 
     // 进度
@@ -105,7 +122,7 @@
     // 上一题按钮
     $('#btn-prev').style.display = STATE.currentQuestion > 0 ? 'flex' : 'none';
     // 按钮文字
-    const isLast = STATE.currentQuestion === QUESTIONS.length - 1;
+    const isLast = STATE.currentQuestion === QUESTIONS_LOADED.length - 1;
     $('#btn-next').textContent = isLast ? '查看结果' : '下一题';
     $('#btn-next').disabled = !STATE.answers[q.id];
     $('#btn-next').style.opacity = STATE.answers[q.id] ? '1' : '0.5';
@@ -129,7 +146,7 @@
   }
 
   $('#btn-next').addEventListener('click', () => {
-    const q = QUESTIONS[STATE.currentQuestion];
+    const q = QUESTIONS_LOADED[STATE.currentQuestion];
     if (!STATE.answers[q.id]) return;
 
     if (STATE.currentQuestion < QUESTIONS.length - 1) {
@@ -163,7 +180,7 @@
 
     // 遍历所有答案
     for (const [qId, optKey] of Object.entries(STATE.answers)) {
-      const question = QUESTIONS.find(q => q.id === parseInt(qId));
+      const question = QUESTIONS_LOADED.find(q => q.id === parseInt(qId));
       if (!question) continue;
 
       const option = question.options.find(o => o.key === optKey);
@@ -195,7 +212,7 @@
 
     STATE.typeName = generateTypeName(rawScores);
     // 构建答案数组（按题号顺序）
-    const answerArray = QUESTIONS.map(q => STATE.answers[q.id] || '');
+    const answerArray = QUESTIONS_LOADED.map(q => STATE.answers[q.id] || '');
     STATE.bestMatch = findBestMatch(answerArray, rawScores);
   }
 
@@ -505,7 +522,8 @@
   }
 
   // ==================== 初始化 ====================
-  function init() {
+  async function init() {
+    await loadQuestions();
     bindResultActions();
     initHomePage();
     showPage('home');
