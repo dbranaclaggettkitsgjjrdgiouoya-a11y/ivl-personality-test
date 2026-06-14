@@ -308,30 +308,37 @@
 
   <script>
     // ============ 登录验证 ============
-    (function checkLogin() {
-      const overlay = document.getElementById('login-overlay');
-      // sessionStorage 在浏览器关闭后自动清除
-      if (sessionStorage.getItem('ivl_admin_auth') === 'true') {
-        overlay.style.display = 'none';
-        return;
+    (function() {
+      var overlay = document.getElementById('login-overlay');
+      if (!overlay) return;
+      try {
+        if (sessionStorage.getItem('ivl_admin_auth') === 'true') {
+          overlay.style.display = 'none';
+        } else {
+          overlay.style.display = 'flex';
+        }
+      } catch(e) {
+        overlay.style.display = 'flex';
       }
-      overlay.style.display = 'flex';
     })();
 
-    document.getElementById('login-btn').addEventListener('click', function() {
-      const u = document.getElementById('login-user').value.trim();
-      const p = document.getElementById('login-pass').value.trim();
-      const err = document.getElementById('login-error');
-      if (u === 'admin' && p === 'ivl2026') {
-        sessionStorage.setItem('ivl_admin_auth', 'true');
-        document.getElementById('login-overlay').style.display = 'none';
-      } else {
-        err.textContent = '账户名或密码错误，请重试';
-      }
-    });
-
-    document.getElementById('login-pass').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') document.getElementById('login-btn').click();
+    document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('login-btn');
+      if (!btn) return;
+      btn.addEventListener('click', function() {
+        var u = document.getElementById('login-user').value.trim();
+        var p = document.getElementById('login-pass').value.trim();
+        var err = document.getElementById('login-error');
+        if (u === 'admin' && p === 'ivl2026') {
+          try { sessionStorage.setItem('ivl_admin_auth', 'true'); } catch(e) {}
+          document.getElementById('login-overlay').style.display = 'none';
+        } else {
+          err.textContent = '账户名或密码错误，请重试';
+        }
+      });
+      document.getElementById('login-pass').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('login-btn').click();
+      });
     });
 
     // ============ 后端 API ============
