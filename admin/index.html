@@ -240,7 +240,16 @@
     </div>
 
     <!-- 选手数据库 -->
-    <div class="tab-panel" id="tab-players"><div id="players-container"></div></div>
+    <div class="tab-panel" id="tab-players">
+      <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-dark" onclick="addPlayer()">＋ 新增选手</button>
+        <button class="btn" onclick="loadPlayersFromCloud()">☁️ 加载云端</button>
+        <button class="btn" onclick="savePlayersToCloud()">💾 保存到云端</button>
+        <span id="p-save-status" style="font-size:0.8rem;color:var(--text-muted);align-self:center;"></span>
+      </div>
+      <div id="players-container"></div>
+      <div id="player-editor" style="display:none;"></div>
+    </div>
 
     <!-- 题目管理 -->
     <div class="tab-panel" id="tab-questions">
@@ -449,8 +458,35 @@
         </tr>`).join('')}</tbody></table></div>`;
     }
 
+    let editablePlayers = [];
+
+    async function loadPlayersFromCloud() {
+      $('#p-save-status').textContent = '加载中...';
+      try {
+        const r = await fetch(API_BASE + '/api/players');
+        if (r.ok) { editablePlayers = await r.json(); }
+      } catch(e) { editablePlayers = [...PLAYERS]; }
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      renderPlayers();
+      $('#p-save-status').textContent = '已加载 ' + editablePlayers.length + ' 位选手';
+    }
+
+    async function savePlayersToCloud() {
+      $('#p-save-status').textContent = '保存中...';
+      try {
+        await fetch(API_BASE + '/api/players', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({players:editablePlayers})
+        });
+        $('#p-save-status').textContent = '✅ 已同步 (' + editablePlayers.length + ' 位)';
+      } catch(e) {
+        $('#p-save-status').textContent = '⚠️ 保存失败';
+      }
+    }
+
     function renderPlayers() {
       const c = $('#players-container');
+      const players = editablePlayers.length ? editablePlayers : PLAYERS;
       c.innerHTML = `<div style="overflow-x:auto;"><table>
         <thead><tr><th>#</th><th>选手名</th><th>战队</th><th>状态</th><th>答案(1-10)</th><th>六维得分</th><th>简介</th></tr></thead>
         <tbody>${PLAYERS.map((p,i) => `<tr>
@@ -746,6 +782,63 @@
     function stopMonitorTimer() {
       if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; }
       if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    }
+
+    // ============ 选手云端管理 ============
+    let editablePlayers = [];
+    async function loadPlayersFromCloud() {
+      $('#p-save-status').textContent = '加载中...';
+      try { const r = await fetch(API_BASE + '/api/players'); if (r.ok) editablePlayers = await r.json(); }
+      catch(e) { editablePlayers = [...PLAYERS]; }
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      renderPlayers(); $('#p-save-status').textContent = '已加载 '+editablePlayers.length+' 位';
+    }
+    async function savePlayersToCloud() {
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      $('#p-save-status').textContent = '保存中...';
+      try {
+        await fetch(API_BASE + '/api/players', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({players:editablePlayers})});
+        $('#p-save-status').textContent = '✅ 已同步 ('+editablePlayers.length+'位)';
+      } catch(e) { $('#p-save-status').textContent = '⚠️ 失败'; }
+    }
+    function editPlayer(idx) {
+      const list = editablePlayers.length ? editablePlayers : PLAYERS;
+      const p = list[idx]; if (!p) return;
+      const ed = $('#player-editor'); ed.style.display = 'block';
+      ed.innerHTML = `<div style="background:var(--bg-card);border:2px solid var(--text);border-radius:8px;padding:16px;margin-top:12px;">
+        <h4 style="margin-bottom:10px;">编辑选手</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:0.75rem;">选手名</label><input id="ep-name" value="${esc(p.name)}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:2px;"></div>
+          <div><label style="font-size:0.75rem;">战队</label><input id="ep-team" value="${esc(p.team)}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:2px;"></div>
+          <div><label style="font-size:0.75rem;">状态</label><select id="ep-status" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;margin-top:2px;"><option ${p.status==='现役'?'selected':''}>现役</option><option ${p.status==='退役'?'selected':''}>退役</option></select></div>
+          <div><label style="font-size:0.75rem;">照片</label><input id="ep-photo" value="${esc(p.photo||'')}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:2px;"></div>
+        </div>
+        <div style="margin-top:8px;"><label style="font-size:0.75rem;">答案 (空格分隔)</label><input id="ep-answers" value="${(p.answers||[]).join(' ')}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:2px;"></div>
+        <div style="margin-top:8px;"><label style="font-size:0.75rem;">简介</label><textarea id="ep-intro" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;box-sizing:border-box;margin-top:2px;min-height:50px;">${esc(p.intro||'')}</textarea></div>
+        <div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-dark" onclick="savePlayerEdit(${idx})">💾 保存</button><button class="btn" onclick="$('#player-editor').style.display='none'">取消</button></div>
+      </div>`;
+      ed.scrollIntoView({behavior:'smooth'});
+    }
+    function savePlayerEdit(idx) {
+      const p = {id:('player_'+Date.now()),name:$('#ep-name').value.trim(),team:$('#ep-team').value.trim(),status:$('#ep-status').value,photo:$('#ep-photo').value.trim(),answers:$('#ep-answers').value.trim().split(/\\s+/),intro:$('#ep-intro').value.trim(),scores:{}};
+      if (!p.name) { toast('选手名不能为空'); return; }
+      const qs = editQuestions.length ? editQuestions : QUESTIONS_EDIT || [];
+      p.scores = {aggression:0,tactical:0,achievement:0,selfCognition:0,flexibility:0,preMatch:0};
+      p.answers.forEach((a,i) => { const q = qs[i]; if (!q) return; const o = (q.options||[]).find(x => x.key===a); if (o&&o.scores) Object.entries(o.scores).forEach(([d,v]) => { if (p.scores[d]!==undefined) p.scores[d] += v; }); });
+      p.scores.tactical = Math.min(p.scores.tactical, 2);
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      if (idx >= 0 && idx < editablePlayers.length) editablePlayers[idx] = p;
+      renderPlayers();
+    }
+    function addPlayer() {
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      editablePlayers.push({id:'player_'+Date.now(),name:'新选手',team:'TEAM',status:'现役',photo:'',answers:['A','A','A','A','A','A','A','A','A','A'],intro:'简介',scores:{}});
+      renderPlayers(); editPlayer(editablePlayers.length-1);
+    }
+    function deletePlayer(idx) {
+      if (!confirm('确定删除？')) return;
+      if (!editablePlayers.length) editablePlayers = [...PLAYERS];
+      editablePlayers.splice(idx,1); renderPlayers();
     }
 
     // ============ 初始化 ============

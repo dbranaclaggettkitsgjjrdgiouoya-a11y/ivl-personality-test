@@ -7,21 +7,92 @@
   // ==================== 后端 API 地址 ====================
   const API_BASE = 'https://master.ivl-personality-test.pages.dev';
 
-  // ==================== 动态题目加载 ====================
-  let QUESTIONS_LOADED = QUESTIONS; // 默认使用 data.js 中的题目
+  // ==================== 动态数据加载 ====================
+  let QUESTIONS_LOADED = QUESTIONS;
+  let PLAYERS_LOADED = PLAYERS;
+  let DIMENSIONS_LOADED = DIMENSIONS;
+  let DIMENSIONS_FULL = DIMENSIONS;
 
-  async function loadQuestions() {
+  async function loadData() {
     try {
       const resp = await fetch(API_BASE + '/api/questions');
       if (resp.ok) {
         const data = await resp.json();
-        if (data && data.length > 0) {
-          QUESTIONS_LOADED = data;
-          return;
+        const questions = data.questions || data;
+        if (questions && questions.length > 0) {
+          QUESTIONS_LOADED = questions;
+        }
+        if (data.dimensions && data.dimensions.length > 0) {
+          DIMENSIONS_LOADED = data.dimensions;
+          DIMENSIONS_FULL = data.dimensions;
         }
       }
     } catch (e) {}
-    QUESTIONS_LOADED = QUESTIONS; // 回退到本地
+    // 加载选手
+    try {
+      const pResp = await fetch(API_BASE + '/api/players');
+      if (pResp.ok) {
+        const players = await pResp.json();
+        if (players && players.length > 0) {
+          PLAYERS_LOADED = players;
+          // 用题目重新计算选手得分
+          recalcPlayerScores(PLAYERS_LOADED, QUESTIONS_LOADED);
+        }
+      }
+    } catch (e) {}
+  }
+
+  function recalcPlayerScores(players, questions) {
+    players.forEach(p => {
+      const scores = {};
+      DIMENSIONS_FULL.forEach(d => scores[d.key] = 0);
+      (p.answers || []).forEach((ans, idx) => {
+        const q = questions[idx];
+        if (!q) return;
+        const opt = (q.options || []).find(o => o.key === ans);
+        if (opt && opt.scores) {
+          Object.entries(opt.scores).forEach(([dim, val]) => {
+            if (scores[dim] !== undefined) scores[dim] += val;
+          });
+        }
+      });
+      scores.tactical = Math.min(scores.tactical || 0, 2);
+      p.scores = scores;
+    });
+  }
+
+  // 动态版本的核心函数
+  function findBestMatchDynamic(userAnswers, userScores) {
+    const normalizedUser = {};
+    DIMENSIONS_LOADED.forEach(d => {
+      normalizedUser[d.key] = (userScores[d.key] || 0) / d.max;
+    });
+    let best = null, bestDist = Infinity;
+    PLAYERS_LOADED.forEach(p => {
+      const np = {};
+      DIMENSIONS_LOADED.forEach(d => {
+        np[d.key] = (p.scores?.[d.key] || 0) / d.max;
+      });
+      let sum = 0;
+      DIMENSIONS_LOADED.forEach(d => {
+        sum += Math.pow((normalizedUser[d.key]||0) - (np[d.key]||0), 2);
+      });
+      const dist = Math.sqrt(sum);
+      if (dist < bestDist) { bestDist = dist; best = p; }
+    });
+    return best;
+  }
+
+  function generateTypeNameDynamic(scores) {
+    const s = {
+      aggression: scores.aggression || 0,
+      tactical: scores.tactical || 0,
+      achievement: scores.achievement || 0,
+      selfCognition: scores.selfCognition || 0,
+      flexibility: scores.flexibility || 0,
+      preMatch: scores.preMatch || 0
+    };
+    return generateTypeName(s);
   }
 
   // ==================== 应用状态 ====================
@@ -85,9 +156,7 @@
   }
 
   function updateHomeStats() {
-    // 选手数量
-    $('#stat-players').textContent = PLAYERS.length;
-    // 类型数（基于规则）
+    $('#stat-players').textContent = PLAYERS_LOADED.length;
     $('#stat-types').textContent = '30+';
   }
 
@@ -199,7 +268,7 @@
     // 根据用户数据基础分，叠加随机偏移生成百分比（保证每次结果不同）
     STATE.scores = {};
     STATE.percentages = {};
-    DIMENSIONS.forEach(dim => {
+    DIMENSIONS_LOADED.forEach(dim => {
       const basePct = (rawScores[dim.key] / dim.max) * 100; // 0-100 基础值
       // 随机偏移 ±18%，确保每次测试结果都有变化
       const offset = (Math.random() - 0.5) * 36;
@@ -210,10 +279,10 @@
       STATE.percentages[dim.key] = pct;
     });
 
-    STATE.typeName = generateTypeName(rawScores);
+    STATE.typeName = generateTypeNameDynamic(rawScores);
     // 构建答案数组（按题号顺序）
     const answerArray = QUESTIONS_LOADED.map(q => STATE.answers[q.id] || '');
-    STATE.bestMatch = findBestMatch(answerArray, rawScores);
+    STATE.bestMatch = findBestMatchDynamic(answerArray, rawScores);
   }
 
   // ==================== 加载动画 ====================
@@ -264,7 +333,7 @@
 
     // 绘制雷达图（使用百分比/100作为0-1值）
     const percentScores = {};
-    DIMENSIONS.forEach(dim => {
+    DIMENSIONS_LOADED.forEach(dim => {
       percentScores[dim.key] = (STATE.percentages[dim.key] || 0) / 100;
     });
     setTimeout(() => {
@@ -294,7 +363,7 @@
     const container = $('#dimension-details');
     container.innerHTML = '';
 
-    DIMENSIONS.forEach(dim => {
+    DIMENSIONS_LOADED.forEach(dim => {
       const pct = STATE.percentages[dim.key] || 0;
       const item = document.createElement('div');
       item.className = 'dimension-item';
@@ -523,7 +592,7 @@
 
   // ==================== 初始化 ====================
   async function init() {
-    await loadQuestions();
+    await loadData();
     bindResultActions();
     initHomePage();
     showPage('home');
