@@ -272,6 +272,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ============ 后端 API ============
+    const API_BASE = 'https://master.ivl-personality-test.pages.dev';
+
     // ============ 17位真实选手完整数据 ============
     const PLAYERS = [
       { name:'祈颜', team:'GG', status:'现役', answers:['B','A','A','B','D','B','A','B','B','A'],
@@ -364,7 +367,7 @@
 
     async function refreshData() {
       try {
-        const r = await fetch('/api/feedback');
+        const r = await fetch(API_BASE + '/api/feedback');
         if (r.ok) { const d = await r.json(); localStorage.setItem('ivl_test_feedbacks', JSON.stringify(d)); }
       } catch(e) {}
       const fbs = getFeedbacks();
@@ -419,7 +422,7 @@
     function clearData() {
       if (!confirm('确定清空所有留言数据？不可恢复！')) return;
       localStorage.removeItem('ivl_test_feedbacks');
-      fetch('/api/feedback/clear',{method:'POST'}).catch(()=>{});
+      fetch(API_BASE + '/api/feedback/clear',{method:'POST'}).catch(()=>{});
       refreshData();
     }
 
@@ -442,7 +445,7 @@
     function loadMonitor() {
       const local = getCompletions();
       // 优先从后端获取
-      fetch('/api/completions').then(r => r.json()).then(data => {
+      fetch(API_BASE + '/api/completions').then(r => r.json()).then(data => {
         renderMonitor(data);
       }).catch(() => {
         // 回退到本地数据

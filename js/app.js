@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+  // ==================== 后端 API 地址 ====================
+  const API_BASE = 'https://master.ivl-personality-test.pages.dev';
+
   // ==================== 应用状态 ====================
   const STATE = {
     currentQuestion: 0,
@@ -438,7 +441,7 @@
   }
 
   function sendFeedbackToServer(feedback) {
-    fetch('/api/feedback', {
+    fetch(API_BASE + '/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(feedback)
@@ -492,12 +495,12 @@
       // 保留最近1000条
       const trimmed = data.slice(-1000);
       localStorage.setItem(key, JSON.stringify(trimmed));
-      // 同步到后端
-      fetch('/api/completion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(trimmed[trimmed.length - 1])
-      }).catch(() => {});
+      // 同步到 Cloudflare 后端
+    fetch(API_BASE + '/api/completion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(trimmed[trimmed.length - 1])
+    }).catch(() => {});
     } catch (e) {}
   }
 
